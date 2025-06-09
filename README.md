@@ -88,7 +88,7 @@ El proyecto está organizado de la siguiente manera:
 
 ## Configuración
 
-**Prerrequisitos**
+**Pre requisitos**
 
 Asegúrate de tener Python 3.11+ instalado en tu máquina. También necesitarás pip para instalar los paquetes de Python.
 
