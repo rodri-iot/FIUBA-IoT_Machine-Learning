@@ -3,9 +3,6 @@
 El objetivo es evaluar los datos, realizando un análisis descriptivo y evaluar una serie de modelos de clasificación y elegir el que mejor  resultados obtiene prediciendo la columna 21 que representa si se suscribe al servicio correspondiente.
 
 # 🏦 Marketing Bancario Inteligente: Predicción de Suscripciones a Depósitos a Plazo
-
-### **Proyecto Final - Bootcamp Data Science | 4Geeks Academy**
-
 ---
 
 ## 🌟 **Descripción del Proyecto**
@@ -173,4 +170,5 @@ Puedes descargar el modelo entrenado para tus experimentos: [Descargar Modelo Li
 ## Colaboradores
 
 - Rodrigo Pinedo
+- rodrigo.j.pinedo@gmail.com
 - LinkedIn: https://www.linkedin.com/in/rodrigopinedo/
