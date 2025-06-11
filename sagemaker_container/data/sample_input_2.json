@@ -1,0 +1,22 @@
+{
+  "age": 35,
+  "job": "management",
+  "marital": "single",
+  "education": "university.degree",
+  "default": "no",
+  "housing": "no",
+  "loan": "no",
+  "contact": "cellular",
+  "month": "may",
+  "day_of_week": "mon",
+  "duration": 100,
+  "campaign": 4,
+  "pdays": 5,
+  "previous": 1,
+  "poutcome": "success",
+  "emp.var.rate": -1.8,
+  "cons.price.idx": 92.893,
+  "cons.conf.idx": -46.2,
+  "euribor3m": 1.313,
+  "nr.employed": 4963.0
+}
