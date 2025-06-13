@@ -54,6 +54,12 @@ function App() {
         housing: 'yes', loan: 'yes', contact: 'telephone', month: 'jul', day_of_week: 'wed', duration: 150,
         campaign: 3, pdays: 7, previous: 1, poutcome: 'success', 'emp.var.rate': 1.4,
         'cons.price.idx': 92.893, 'cons.conf.idx': -46.2, euribor3m: 4.857
+      },
+      shirley: {
+        age: 59, job: 'blue-collar', marital: 'married', education: 'basic.4y', default: 'no',
+        housing: 'yes', loan: 'yes', contact: 'telephone', month: 'nov', day_of_week: 'thu', duration: 57,
+        campaign: 3, pdays: 999, previous: 0, poutcome: 'nonexistent', 'emp.var.rate': -1.8, 
+        'cons.price.idx': 92.893, 'cons.conf.idx': -46.2, euribor3m: 1.299
       }
     };
     setFormData(cases[name]);
@@ -66,7 +72,8 @@ function App() {
           <img src={logo} alt="FIUBA logo" style={{ height: '100px', marginBottom: '1rem' }} />
           <h2 style={{ borderBottom: '2px solid black', paddingBottom: '0.5rem' }}>Predicción Inteligente Bancaria</h2>
           <p><strong>🧠 Simulación de una campaña de marketing telefónico real</strong></p>
-          <p><strong>Caso:</strong> Un operador del Banco “Portugal” realiza una <strong>llamada telefónica a Juan Pérez</strong> con el objetivo de convencerlo de que contrate un <strong>depósito a plazo</strong>.</p>
+          <p><strong>Objetivo:</strong> Predecir si un cliente hara un <strong>depósito a plazo</strong>.</p>
+          <p><strong>Caso:</strong> Un operador del Banco “Portugal” realiza una <strong>llamada telefónica al cliente Rodrigo</strong> con el objetivo de convencerlo de que contrate un <strong>depósito a plazo</strong>.</p>
           <p><strong>Llamada:</strong> El operador completa el formulario con la información que Juan le brinda en tiempo real.</p>
           <p><strong>Machine Learning:</strong> Al presionar “Predecir”, el sistema utiliza un modelo entrenado con LightGBM para estimar si Juan aceptará o no la propuesta.</p>
           <p><strong>Resultado:</strong> Además de la predicción, el sistema muestra la <strong>importancia relativa de las variables (SHAP)</strong> utilizadas por el modelo para tomar la decisión.</p>
@@ -80,6 +87,7 @@ function App() {
           <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
             <button onClick={() => loadCase('rodrigo')}>📋 Caso Rodrigo</button>
             <button onClick={() => loadCase('jurgen')}>📋 Caso Jurgen</button>
+            <button onClick={() => loadCase('shirley')}>📋 Caso Shirley</button>
           </div>
 
           <form onSubmit={handleSubmit} className="form-card">
@@ -90,9 +98,19 @@ function App() {
           </form>
 
           {result && (
-            <div style={{ background: '#d9faff', padding: '1rem', borderRadius: '8px', margin: '1rem 0' }}>
-              <p><strong>Predicción:</strong> {result.prediction}</p>
-              <p><strong>Probabilidad:</strong> {result.probability?.toFixed(4)}</p>
+            <div style={{ background: '#f0f8ff', padding: '1.5rem', borderRadius: '12px', maxWidth: '600px', margin: '1rem auto', border: '2px solid #ccc' }}>
+              <h3 style={{ marginBottom: '1rem' }}>📊 Resultado del Modelo</h3>
+              <p style={{ fontSize: '1.1rem' }}>
+                <strong>Predicción:</strong>{' '}
+                {result.prediction === 1 ? (
+                  <span style={{ color: 'red', fontWeight: 'bold' }}>🔴 El cliente NO hará un depósito a plazo.</span>
+                ) : (
+                  <span style={{ color: 'green', fontWeight: 'bold' }}>🟢 El cliente SÍ hará un depósito a plazo.</span>
+                )}
+              </p>
+              <p style={{ fontSize: '1rem', marginTop: '0.5rem' }}>
+                <strong>Probabilidad:</strong> {result.probability?.toFixed(4)}
+              </p>
             </div>
           )}
 

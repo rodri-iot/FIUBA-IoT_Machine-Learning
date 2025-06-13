@@ -1,6 +1,6 @@
 {
-  "age": 35,
-  "job": "technician",
+  "age": 32,
+  "job": "admin.",
   "marital": "single",
   "education": "university.degree",
   "default": "no",
@@ -9,13 +9,13 @@
   "contact": "cellular",
   "month": "may",
   "day_of_week": "mon",
-  "duration": 100,
-  "campaign": 2,
+  "duration": 720,
+  "campaign": 1,
   "pdays": 999,
   "previous": 0,
   "poutcome": "nonexistent",
-  "emp.var.rate": 1.1,
-  "cons.price.idx": 93.994,
-  "cons.conf.idx": -36.4,
-  "euribor3m": 4.857
+  "emp.var.rate": -1.1,
+  "cons.price.idx": 93.918,
+  "cons.conf.idx": -42.0,
+  "euribor3m": 1.344
 }
