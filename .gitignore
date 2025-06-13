@@ -172,3 +172,12 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Archivos de configuración y llaves
+*.pem
+*.key
+*.crt
+*.env
+.env.*
+.vscode/
+.ssh/

@@ -1,0 +1,50 @@
+.feature-cards-container {
+  margin-top: 2rem;
+}
+
+.accordion-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.8rem;
+  background: #f1f5f9;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  color: #333;
+}
+
+.feature-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+  justify-content: center;
+}
+
+.feature-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  padding: 1rem;
+  width: 100%;
+  max-width: 280px;
+  transition: transform 0.2s ease;
+}
+
+.feature-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.feature-card h4 {
+  margin: 0 0 0.5rem 0;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.feature-card p {
+  margin: 0.3rem 0;
+  font-size: 0.9rem;
+  color: #444;
+}
