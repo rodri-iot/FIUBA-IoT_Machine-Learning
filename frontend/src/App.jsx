@@ -4,6 +4,8 @@ import FormInput from './components/FormInput.jsx';
 import FeatureTable from './components/FeatureTable.jsx';
 import SHAP from './components/SHAP.jsx';
 import logo from './assets/logo-fiuba.png';
+import HistoryPanel from './components/HistoryPanel';
+
 
 function App() {
   const [formData, setFormData] = useState({
@@ -13,6 +15,7 @@ function App() {
   });
   const [result, setResult] = useState(null);
   const [shap, setShap] = useState(null);
+  const [error, setError] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,6 +24,15 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+
+    const isValid = Object.entries(formData).every(([_, value]) => value !== '');
+    if (!isValid) {
+      alert("Por favor completa todos los campos antes de predecir.");
+      return;
+    }
+
+
     try {
       const res = await fetch(import.meta.env.VITE_API_URL + '/predict', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -38,6 +50,7 @@ function App() {
 
     } catch (err) {
       console.error(err);
+      setError("Ocurrió un error al contactar el servidor de predicción.");
     }
   };
 
@@ -67,7 +80,9 @@ function App() {
 
   return (
     <div className="App" style={{ padding: '2rem', background: '#f5f5f5' }}>
+     
       <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
+        
         <div style={{ flex: 1, maxWidth: '350px' }}>
           <img src={logo} alt="FIUBA logo" style={{ height: '100px', marginBottom: '1rem' }} />
           <h2 style={{ borderBottom: '2px solid black', paddingBottom: '0.5rem' }}>Predicción Inteligente Bancaria</h2>
@@ -77,6 +92,8 @@ function App() {
           <p><strong>Llamada:</strong> El operador completa el formulario con la información que Juan le brinda en tiempo real.</p>
           <p><strong>Machine Learning:</strong> Al presionar “Predecir”, el sistema utiliza un modelo entrenado con LightGBM para estimar si Juan aceptará o no la propuesta.</p>
           <p><strong>Resultado:</strong> Además de la predicción, el sistema muestra la <strong>importancia relativa de las variables (SHAP)</strong> utilizadas por el modelo para tomar la decisión.</p>
+       <HistoryPanel />
+      
         </div>
 
         <div style={{ flex: 2 }}>
@@ -91,7 +108,8 @@ function App() {
           </div>
 
           <form onSubmit={handleSubmit} className="form-card">
-            <FormInput formData={formData} />
+            <FormInput formData={formData} handleChange={handleChange} />
+
             <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
               <button type="submit">Predecir</button>
             </div>
@@ -113,13 +131,17 @@ function App() {
               </p>
             </div>
           )}
-
+            
           <SHAP shap={shap} />
+
+           
         </div>
+
+        
       </div>
 
       <FeatureTable />
-
+            
       <footer style={{ marginTop: '2rem', fontSize: '0.8rem', textAlign: 'center', color: '#555' }}>
         © 2025 – Rodrigo Jurgen Pinedo Nava · Proyecto académico FIUBA · AWS + ML | <a href="https://github.com/rodri-iot/FIUBA-IoT_Machine-Learning/tree/main" target="_blank">GitHub</a> | <a href="https://www.linkedin.com/in/rodrigopinedo/" target="_blank">LinkedIn</a>
       </footer>
