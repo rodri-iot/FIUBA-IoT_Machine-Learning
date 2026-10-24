@@ -20,7 +20,7 @@ El operador completa los datos del cliente (o carga uno de los casos precargados
 flowchart LR
     U[Navegador<br/>React + Vite] -->|bankml.mydatavibe.com| V[Vercel CDN]
     V -->|/api/*| F[Vercel Function · Python<br/>FastAPI]
-    F --> M[(Modelo LightGBM<br/>en memoria · 350 KB)]
+    F --> M[(Modelo exportado a JSON<br/>221 KB · Python puro)]
     F --> N[(Neon Postgres<br/>historial + contadores)]
 ```
 
@@ -28,7 +28,7 @@ flowchart LR
 |---|---|
 | Frontend | React 19 + Vite (estático, servido por Vercel CDN) |
 | API | FastAPI en Vercel Functions (Python 3.12) — **una invocación por consulta** |
-| Modelo | scikit-learn `Pipeline` (preprocesamiento propio + LightGBM) |
+| Modelo | Entrenado con LightGBM; en producción se sirve desde `models/model.json` con un motor en **Python puro** (sin LightGBM/numpy/pandas) |
 | Historial / límites | Neon Postgres (free tier); sin base, degrada a memoria |
 | DNS | Subdominio `bankml` → Vercel (CNAME en Hostinger) |
 
@@ -48,10 +48,11 @@ Esa infraestructura se dio de baja. El código original se conserva en [`legacy/
 **v2 (actual) — Vercel.** Misma idea, sin servidores que mantener, sin costos fijos y con despliegue continuo desde GitHub.
 
 ### Correcciones al migrar
-Durante la migración se encontraron y corrigieron dos errores de la v1:
+Durante la migración se encontraron y corrigieron tres errores de la v1:
 
 1. **Resultado invertido en la UI:** `y = 1` significa *"sí contrata"* (ver `ml/train.py`), pero la interfaz y el README lo mostraban al revés.
 2. **Variable faltante (`nr.employed`):** el modelo la usa como feature, pero el formulario nunca la enviaba y el preprocesador la rellenaba con `0`. Medido sobre una muestra del dataset: AUC **0.70** (sin la variable, como en la v1) vs **0.83** (con ella), y 68 % de positivos predichos vs 19 % real. La v2 la pide en el formulario.
+3. **Inferencia fila-por-fila distinta al entrenamiento:** `pd.get_dummies(..., drop_first=True)` sobre un único registro descartaba siempre la columna del mes, así que `month` no influía nunca en producción. En una muestra, el **26 %** de las predicciones difería de la inferencia en lote. La v2 reimplementa el preprocesamiento con la semántica de entrenamiento y un test de paridad lo verifica.
 
 ## 🧪 Modelo
 
@@ -65,17 +66,17 @@ Durante la migración se encontraron y corrigieron dos errores de la v1:
 ```bash
 # API
 python3.12 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt uvicorn
 PYTHONPATH=api uvicorn index:app --port 8000
 
 # Frontend (en otra terminal; proxea /api a localhost:8000)
 cd frontend && npm ci && npm run dev
 
-# Tests
-pip install pytest httpx && pytest tests -q
+# Tests (incluye paridad contra LightGBM/scikit-learn)
+pip install -r requirements-train.txt && pytest tests -q
 ```
 
-Reentrenar: `pip install -r requirements-train.txt && python ml/train.py` (ejecutar desde la raíz).
+Reentrenar y re-exportar (desde la raíz): `python ml/train.py && python ml/export_model.py`.
 
 ### Variables de entorno (opcionales)
 
@@ -92,8 +93,8 @@ Reentrenar: `pip install -r requirements-train.txt && python ml/train.py` (ejecu
 ```
 api/            API FastAPI (Vercel Function) + límites anti-abuso
 frontend/       React + Vite
-ml/             Preprocesamiento y entrenamiento
-models/         Pipeline entrenado (.joblib)
+ml/             Preprocesamiento, entrenamiento y exportación a JSON
+models/         Pipeline entrenado (.joblib) y modelo portable (model.json)
 data/           Dataset y ejemplos
 notebooks/      Exploración (EDA)
 docs/           Arquitectura y decisiones

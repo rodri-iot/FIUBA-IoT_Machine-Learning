@@ -1,5 +1,5 @@
 // Contribución de cada variable a la predicción, en log-odds (equivalente a valores SHAP
-// de un modelo de árboles, calculados con LightGBM `pred_contrib`).
+// de un modelo de árboles, calculados con TreeSHAP exacto).
 export default function SHAP({ contributions }) {
   if (!contributions || typeof contributions !== 'object') return null;
 

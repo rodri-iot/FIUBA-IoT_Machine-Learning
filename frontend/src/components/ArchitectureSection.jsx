@@ -30,7 +30,7 @@ export default function ArchitectureSection() {
           <Node x={10} y={68} w={130} lines={['Navegador', 'React + Vite']} />
           <Node x={200} y={68} w={150} lines={['Vercel CDN', 'bankml.mydatavibe.com']} accent="#000" />
           <Node x={420} y={20} w={190} h={70} lines={['Vercel Function (Python)', 'FastAPI · /api/predict', 'límites anti-abuso']} accent="#000" />
-          <Node x={420} y={112} w={190} lines={['Modelo en memoria', 'LightGBM + pipeline (350 KB)']} />
+          <Node x={420} y={112} w={190} lines={['Modelo en JSON (221 KB)', 'motor Python puro']} />
           <Node x={700} y={20} w={190} h={70} lines={['Neon Postgres', 'historial + contadores', '(free tier, se duerme)']} accent="#2e9e5b" />
           <path d="M140 95 L200 95" {...arrow} />
           <path d="M350 85 L420 60" {...arrow} />
@@ -40,7 +40,7 @@ export default function ArchitectureSection() {
         </svg>
 
         <ul>
-          <li><strong>Una invocación por consulta:</strong> <code>/api/predict</code> devuelve predicción y contribuciones por variable (LightGBM <code>pred_contrib</code>, equivalente a SHAP en árboles).</li>
+          <li><strong>Una invocación por consulta:</strong> <code>/api/predict</code> devuelve predicción y contribuciones por variable (TreeSHAP exacto sobre un LightGBM exportado a JSON, sin dependencias de ML en producción).</li>
           <li><strong>Cuidado del free tier:</strong> validación estricta de entrada, tope de 4 KB por request, 6 consultas/min y 40/día por IP (hash), 1500/día globales, y purga automática de datos a los 2 días.</li>
           <li><strong>Sin servidores que mantener:</strong> serverless, sin instancias ni costos fijos.</li>
         </ul>
