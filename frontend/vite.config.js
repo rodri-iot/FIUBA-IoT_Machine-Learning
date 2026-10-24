@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 // (o a `vercel dev`).
 export default defineConfig({
   plugins: [react()],
-  build: { outDir: 'dist', emptyOutDir: true },
+  // FastAPI en Vercel sirve public/ desde el CDN
+  build: { outDir: '../public', emptyOutDir: true },
   server: { proxy: { '/api': 'http://localhost:8000' } },
 })

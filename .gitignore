@@ -189,3 +189,6 @@ frontend/dist
 frontend/node_modules
 *.pem
 .ssh/
+
+# build del frontend (Vercel sirve public/)
+public/
