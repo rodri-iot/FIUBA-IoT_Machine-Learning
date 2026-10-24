@@ -37,7 +37,10 @@ export default function App() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(res.status === 429 ? data.error : 'No pudimos calcular el resultado. Probá de nuevo en unos segundos.');
+        // 429 de la API (límite propio) o 429/403 del firewall de Vercel (respuesta sin JSON).
+        const limited = res.status === 429 || res.status === 403;
+        setError(limited ? (data.error || 'Demasiadas consultas seguidas. Esperá un minuto y probá de nuevo.')
+          : 'No pudimos calcular el resultado. Probá de nuevo en unos segundos.');
         return;
       }
       setResult(data);
