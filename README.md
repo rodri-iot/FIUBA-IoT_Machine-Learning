@@ -1,54 +1,106 @@
-# 🏦 FIUBA-IoT_Machine-Learning: Predicción Inteligente Bancaria
+# 🏦 Predicción Inteligente Bancaria
 
-## 🌟 Descripción del Proyecto
-Este proyecto tiene como objetivo optimizar campañas de marketing bancario mediante la predicción de qué clientes son más propensos a aceptar un depósito a plazo fijo. Se aplican técnicas avanzadas de Machine Learning y análisis de datos para mejorar la eficiencia, reducir costos y personalizar la experiencia del cliente.
+Modelo de Machine Learning (LightGBM) que estima si un cliente contratará un **depósito a plazo fijo** a partir de los datos de una llamada de marketing, con explicación de qué variables empujaron la decisión.
 
-## 🧠 ¿Qué hace?
-Permite ingresar los datos de un posible cliente y, con base en un modelo de Machine Learning entrenado con LightGBM, predecir si suscribirá un depósito a plazo. La app también muestra la importancia de cada variable usando SHAP.
+🌐 **Demo:** https://bankml.mydatavibe.com  
+🎓 Proyecto académico — FIUBA, Ingeniería en IoT y Machine Learning
 
-## 🛠️ Tecnologías Utilizadas
-- **Machine Learning:** Python, Scikit-learn, LightGBM, Pandas, NumPy, Matplotlib, Seaborn
-- **Frontend:** React + Vite (desplegado en AWS S3)
-- **Backend:** Python Flask (desplegado en AWS EC2)
-- **Infraestructura:** Docker, EC2, S3, GitHub
+## 🧠 Qué hace
 
-## 🧪 Proceso de Desarrollo
-- **Exploración de Datos (EDA):** análisis descriptivo, detección de patrones.
-- **Preprocesamiento:** normalización, reducción de variables, codificación.
-- **Modelado:** comparación de modelos, selección de LightGBM como final.
-- **Métricas:** precisión, recall y ROC-AUC (con foco en recall por el desbalanceo).
-- **Interpretabilidad:** explicación con SHAP values.
+El operador completa los datos del cliente (o carga uno de los casos precargados) y la app devuelve:
 
-## 🖥️ App Web Interactiva
-Disponible aquí 👉 http://fiuba-frontend-ml-bank-prediction.s3-website-us-east-1.amazonaws.com/
+- **Predicción:** `1` = el cliente **SÍ** contratará el depósito, `0` = **NO**.
+- **Probabilidad** de contratación.
+- **Contribución de cada variable** (log-odds, equivalente a valores SHAP en modelos de árboles) para entender el porqué.
+- **Historial** de las últimas predicciones.
 
-### 🧪 Casos Precargados
-Simulaciones para operadores que deseen predecir resultados durante llamadas reales a clientes.
+## 🏗️ Arquitectura
 
-## 📊 Ejemplo de Predicción
-- `1` = El cliente 🔴 **NO hará** un depósito a plazo.
-- `0` = El cliente 🟢 **SÍ hará** un depósito a plazo.
-
-## 📥 Descargar el Modelo
-Próximamente disponible.
-
-## 📂 Estructura del Proyecto
-```
-frontend/       --> React + Vite + estilos
-backend/        --> Flask + modelo ML + endpoints REST
-models/         --> Modelos entrenados (.joblib)
-data/           --> Datos de entrada y prueba
+```mermaid
+flowchart LR
+    U[Navegador<br/>React + Vite] -->|bankml.mydatavibe.com| V[Vercel CDN]
+    V -->|/api/*| F[Vercel Function · Python<br/>FastAPI]
+    F --> M[(Modelo LightGBM<br/>en memoria · 350 KB)]
+    F --> N[(Neon Postgres<br/>historial + contadores)]
 ```
 
-## 📌 Próximos Pasos
-- Mejorar el modelo con más variables y datos históricos.
-- Reemplazar servicio Docker simulado por un endpoint real en SageMaker.
-- Implementar HTTPS con dominio propio.
+| Capa | Tecnología |
+|---|---|
+| Frontend | React 19 + Vite (estático, servido por Vercel CDN) |
+| API | FastAPI en Vercel Functions (Python 3.12) — **una invocación por consulta** |
+| Modelo | scikit-learn `Pipeline` (preprocesamiento propio + LightGBM) |
+| Historial / límites | Neon Postgres (free tier); sin base, degrada a memoria |
+| DNS | Subdominio `bankml` → Vercel (CNAME en Hostinger) |
+
+### Free tier y protección contra abuso
+La demo corre íntegra en planes gratuitos, por lo que la API limita el uso: validación estricta de entrada (enums y rangos del dataset), tope de 4 KB por request, **6 consultas/min y 40/día por IP** (hasheada), **1500/día globales** y purga de datos a los 2 días. Los límites son configurables por variables de entorno (ver más abajo).
+
+Más detalle, decisiones y trade-offs en [`docs/architecture.md`](docs/architecture.md).
+
+## 📜 Historia del proyecto: de AWS a Vercel
+
+**v1 (2025) — AWS.** Frontend estático en **S3** y backend Flask en **EC2** con Docker. El modelo se empaquetó en un contenedor que implementa el contrato de inferencia de **SageMaker** (`/ping`, `/invocations`) para poder migrar luego a un endpoint administrado.
+
+> ⚠️ **Aclaración honesta:** **no se utilizó SageMaker administrado** (ni Training, ni Endpoints). El contenedor "SageMaker-compatible" corría simulado sobre EC2. Por eso el README original hablaba de "reemplazar el servicio Docker simulado por un endpoint real".
+
+Esa infraestructura se dio de baja. El código original se conserva en [`legacy/aws/`](legacy/aws/) como referencia.
+
+**v2 (actual) — Vercel.** Misma idea, sin servidores que mantener, sin costos fijos y con despliegue continuo desde GitHub.
+
+### Correcciones al migrar
+Durante la migración se encontraron y corrigieron dos errores de la v1:
+
+1. **Resultado invertido en la UI:** `y = 1` significa *"sí contrata"* (ver `ml/train.py`), pero la interfaz y el README lo mostraban al revés.
+2. **Variable faltante (`nr.employed`):** el modelo la usa como feature, pero el formulario nunca la enviaba y el preprocesador la rellenaba con `0`. Medido sobre una muestra del dataset: AUC **0.70** (sin la variable, como en la v1) vs **0.83** (con ella), y 68 % de positivos predichos vs 19 % real. La v2 la pide en el formulario.
+
+## 🧪 Modelo
+
+- **Datos:** [Bank Marketing](https://archive.ics.uci.edu/dataset/222/bank+marketing) (`data/raw/`), ~11 % de clase positiva.
+- **Preprocesamiento** (`ml/preprocessing.py`): binning de edad, winsorización de `campaign`, índice económico por PCA, agrupación de `job`/`month`, codificaciones ordinales y one-hot. Se elimina `duration` por *data leakage*.
+- **Modelo:** LightGBM con `scale_pos_weight`, GridSearch optimizando *recall*.
+- **Resultados (comparativa de la exploración):** ver [`presentacion.md`](presentacion.md).
+
+## 🚀 Correr en local
+
+```bash
+# API
+python3.12 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+PYTHONPATH=api uvicorn index:app --port 8000
+
+# Frontend (en otra terminal; proxea /api a localhost:8000)
+cd frontend && npm ci && npm run dev
+
+# Tests
+pip install pytest httpx && pytest tests -q
+```
+
+Reentrenar: `pip install -r requirements-train.txt && python ml/train.py` (ejecutar desde la raíz).
+
+### Variables de entorno (opcionales)
+
+| Variable | Default | Uso |
+|---|---|---|
+| `DATABASE_URL` | — | Postgres (Neon) para historial y límites compartidos |
+| `LIMIT_PER_MIN` | 6 | Consultas por minuto por IP |
+| `LIMIT_PER_DAY_IP` | 40 | Consultas por día por IP |
+| `LIMIT_PER_DAY_GLOBAL` | 1500 | Consultas por día en total |
+| `IP_HASH_SALT` | `bankml-demo` | Sal para hashear IPs |
+
+## 📂 Estructura
+
+```
+api/            API FastAPI (Vercel Function) + límites anti-abuso
+frontend/       React + Vite
+ml/             Preprocesamiento y entrenamiento
+models/         Pipeline entrenado (.joblib)
+data/           Dataset y ejemplos
+notebooks/      Exploración (EDA)
+docs/           Arquitectura y decisiones
+legacy/aws/     v1: contenedor SageMaker-compatible, backend Flask, docker-compose
+tests/          Tests de la API
+```
 
 ## 👨‍💻 Autor
-Rodrigo Pinedo  
-📩 rodrigo.j.pinedo@gmail.com  
+Rodrigo Pinedo · 📩 rodrigo.j.pinedo@gmail.com  
 🔗 [LinkedIn](https://www.linkedin.com/in/rodrigopinedo/) | [GitHub](https://github.com/rodri-iot)
-
----
-Proyecto académico FIUBA - Ingeniería en IoT y Machine Learning

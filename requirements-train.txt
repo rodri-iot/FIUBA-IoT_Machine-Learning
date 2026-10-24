@@ -1,0 +1,6 @@
+# Dependencias para reentrenar y explorar (ml/train.py, notebooks/explore.ipynb).
+-r requirements.txt
+matplotlib==3.9.2
+seaborn==0.13.2
+jupyterlab
+shap
