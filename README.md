@@ -27,7 +27,7 @@ flowchart LR
 | Capa | Tecnología |
 |---|---|
 | Frontend | React 19 + Vite (estático, servido por Vercel CDN) |
-| API | FastAPI en Vercel Functions (Python 3.12) — **una invocación por consulta** |
+| API | FastAPI en Vercel Functions (Python) — **una invocación por consulta** |
 | Modelo | Entrenado con LightGBM; en producción se sirve desde `models/model.json` con un motor en **Python puro** (sin LightGBM/numpy/pandas) |
 | Historial / límites | Neon Postgres (free tier); sin base, degrada a memoria |
 | DNS | Subdominio `bankml` → Vercel (CNAME en Hostinger) |
@@ -65,7 +65,7 @@ Durante la migración se encontraron y corrigieron tres errores de la v1:
 
 ```bash
 # API
-python3.12 -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt uvicorn
 PYTHONPATH=api uvicorn index:app --port 8000
 

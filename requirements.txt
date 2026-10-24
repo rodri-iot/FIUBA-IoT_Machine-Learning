@@ -1,5 +1,6 @@
-# Dependencias de runtime de la API (Vercel Functions, Python 3.12).
+# Dependencias de runtime de la API (Vercel Functions).
 # La inferencia es Python puro (api/_model.py): sin LightGBM/scikit-learn/numpy en producción.
-fastapi==0.115.6
-pydantic==2.10.4
-psycopg[binary]==3.2.3
+# Sin versiones fijas a propósito: el builder de Vercel elige el Python y necesita wheels recientes.
+fastapi>=0.120
+pydantic>=2.12
+psycopg[binary]>=3.3
