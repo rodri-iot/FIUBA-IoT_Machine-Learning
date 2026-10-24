@@ -17,7 +17,6 @@ El operador responde unas pocas preguntas en español (o carga un perfil de ejem
 - **Factores principales** en lenguaje claro (TreeSHAP exacto, agrupado), con detalle técnico opcional.
 - **Sección del modelo** con AUC, curva de ganancia, calibración y desempeño por prioridad, medidos en datos que el modelo no vio.
 - **Hallazgo:** el *cuándo* se llama pesa más que el *a quién* (la tasa real pasó de 3–6 % en 2008 a 40–60 % en 2009–2010).
-- **Historial** de las últimas consultas (sin datos del formulario).
 
 El formulario es una capa amigable: la app traduce las respuestas a las 19 variables del dataset (por ejemplo, el período elegido completa solo el contexto económico).
 
@@ -26,9 +25,9 @@ El formulario es una capa amigable: la app traduce las respuestas a las 19 varia
 ```mermaid
 flowchart LR
     U[Navegador<br/>React + Vite] -->|bankml.mydatavibe.com| V[Vercel CDN]
-    V -->|/api/*| F[Vercel Function · Python<br/>FastAPI]
+    V -->|/api/*| W{Firewall<br/>20 req/min por IP}
+    W --> F[Vercel Function · Python<br/>FastAPI]
     F --> M[(Modelo exportado a JSON<br/>221 KB · Python puro)]
-    F --> N[(Neon Postgres<br/>historial + contadores)]
 ```
 
 | Capa | Tecnología |
@@ -36,11 +35,11 @@ flowchart LR
 | Frontend | React 19 + Vite (estático, servido por Vercel CDN) |
 | API | FastAPI en Vercel Functions (Python) — **una invocación por consulta** |
 | Modelo | Entrenado con LightGBM; en producción se sirve desde `models/model.json` con un motor en **Python puro** (sin LightGBM/numpy/pandas) |
-| Historial / límites | Neon Postgres (free tier); sin base, degrada a memoria |
+| Anti-abuso | Regla de firewall de Vercel (20 req/min por IP) + límite por IP en la función. **Sin base de datos**: la demo no guarda nada |
 | DNS | Subdominio `bankml` → Vercel (CNAME en Hostinger) |
 
 ### Free tier y protección contra abuso
-La demo corre íntegra en planes gratuitos, por lo que la API limita el uso: validación estricta de entrada (enums y rangos del dataset), tope de 4 KB por request, **6 consultas/min y 40/día por IP** (hasheada), **1500/día globales** y purga de datos a los 2 días. Los límites son configurables por variables de entorno (ver más abajo).
+La demo corre íntegra en planes gratuitos, por lo que la API limita el uso: validación estricta de entrada (enums y rangos del dataset), tope de 4 KB por request, regla de **firewall de Vercel (20 req/min por IP)** y, en la función, **6 consultas/min y 40/día por IP** (contadores en memoria). No hay base de datos ni se guardan las respuestas. Si alguien agotara la cuota, el plan Hobby pausa el proyecto en lugar de cobrar.
 
 Más detalle, decisiones y trade-offs en [`docs/architecture.md`](docs/architecture.md).
 
@@ -91,11 +90,8 @@ Reentrenar y re-exportar (desde la raíz): `python ml/train.py && python ml/expo
 
 | Variable | Default | Uso |
 |---|---|---|
-| `DATABASE_URL` | — | Postgres (Neon) para historial y límites compartidos |
 | `LIMIT_PER_MIN` | 6 | Consultas por minuto por IP |
 | `LIMIT_PER_DAY_IP` | 40 | Consultas por día por IP |
-| `LIMIT_PER_DAY_GLOBAL` | 1500 | Consultas por día en total |
-| `IP_HASH_SALT` | `bankml-demo` | Sal para hashear IPs |
 
 ## 📂 Estructura
 

@@ -46,13 +46,13 @@ function V2() {
     <svg className="dg" viewBox="0 0 480 330" role="img" aria-label="Arquitectura v2 en Vercel">
       <Defs />
       <Node x={176} y={8} w={128} title="Usuario" sub="navegador" />
-      <Node x={150} y={86} w={180} title="Vercel CDN" sub="bankml.mydatavibe.com · HTTPS" tone="ok" />
+      <Node x={150} y={86} w={180} title="Vercel CDN + firewall" sub="bankml.mydatavibe.com · HTTPS" tone="ok" />
       <rect x={20} y={158} width={440} height={166} rx="14" className="dg-zone ok" />
       <text x={34} y={178} className="dg-zonelabel">Función serverless (solo corre cuando alguien la usa)</text>
       <Node x={36} y={196} w={132} title="FastAPI" sub="validación + límites" tone="ok" />
       <Node x={206} y={196} w={132} title="Motor del modelo" sub="JSON · Python puro" tone="ok" />
       <Node x={362} y={196} w={84} title="SHAP" sub="misma llamada" />
-      <Node x={36} y={268} w={202} h={44} title="Neon Postgres (opcional)" sub="historial + límites" tone="ok" />
+      <Node x={36} y={268} w={202} h={44} title="Sin base de datos" sub="límites en memoria · no guarda nada" tone="ok" />
       <Arrow d="M240 56 L240 86" />
       <Arrow d="M240 134 L120 196" />
       <Arrow d="M168 220 L206 220" />
@@ -67,7 +67,7 @@ const ROWS = [
   ['Backend', 'Flask en EC2 con Docker, siempre encendido', 'FastAPI serverless, corre bajo demanda', 'Sin servidor que mantener ni pagar 24/7'],
   ['Modelo', 'Contenedor "compatible con SageMaker" (simulado)', 'Modelo exportado a JSON + motor en Python puro', 'LightGBM no corre en Vercel; 221 KB y ~40 ms'],
   ['Explicación', 'Segunda llamada a /explain (SHAP)', 'Misma llamada, TreeSHAP exacto', 'La mitad de las invocaciones'],
-  ['Datos', 'SQLite en el disco de la instancia', 'Neon Postgres (opcional; sin él, memoria por instancia)', 'Persistencia real y límites compartidos entre instancias'],
+  ['Datos', 'SQLite en el disco de la instancia', 'Sin base de datos: la demo no guarda nada', 'Menos piezas, nada que migrar ni proteger'],
   ['Costo', 'EC2 encendida todo el mes', '$0 en planes gratuitos', 'Se cerró la cuenta de AWS sin perder la demo'],
   ['Calidad', 'Sin tests ni límites de uso', '15 tests, paridad con LightGBM y topes anti-abuso', 'Se corrigieron 3 errores de la v1'],
 ];

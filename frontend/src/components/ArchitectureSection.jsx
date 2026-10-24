@@ -2,19 +2,18 @@ import VersionsDiagram from './VersionsDiagram.jsx';
 
 const FLOW = [
   ['Formulario', 'El usuario responde unas pocas preguntas en español. La app las traduce al formato del modelo (19 variables).'],
-  ['CDN de Vercel', 'Sirve la app React estática desde el subdominio bankml.mydatavibe.com.'],
-  ['Función Python', 'FastAPI valida cada campo, limita el uso por IP y por día, y tarda ~40 ms.'],
+  ['CDN y firewall de Vercel', 'Sirve la app React estática desde bankml.mydatavibe.com y frena a más de 20 pedidos por minuto por IP antes de llegar a la función.'],
+  ['Función Python', 'FastAPI valida cada campo, aplica un límite por IP y responde en ~40 ms.'],
   ['Motor del modelo', '100 árboles LightGBM exportados a JSON; predicción, calibración y TreeSHAP en Python puro.'],
-  ['Neon Postgres (opcional)', 'Guarda solo (prioridad, probabilidad, fecha): ni datos del formulario ni IPs en claro. Sin base conectada, usa memoria por instancia.'],
 ];
 
 const DECISIONS = [
-  ['Serverless y gratis', 'El modelo pesa 221 KB: no justifica un servidor siempre prendido. Todo corre en planes gratuitos con topes duros anti-abuso.'],
+  ['Serverless y gratis', 'El modelo pesa 221 KB: no justifica un servidor siempre prendido. Todo corre en planes gratuitos, con firewall y un límite por IP contra el abuso.'],
   ['Motor propio en lugar del .joblib', 'LightGBM necesita libgomp, que Vercel no incluye. Se exportó el modelo a JSON y se reimplementó la inferencia; un test de paridad lo compara contra LightGBM (tolerancia 1e-8).'],
   ['Probabilidad calibrada', 'El entrenamiento con scale_pos_weight infla las probabilidades. Se calibró (Platt) y se midió: el error Brier baja a la mitad.'],
   ['Una sola llamada por consulta', 'La v1 hacía dos requests (predicción y explicación). Ahora una devuelve todo, usando la mitad de la cuota.'],
   ['Preprocesamiento fiel al entrenamiento', 'La v1 anulaba la variable "mes" en inferencia individual (get_dummies con una sola fila). Se corrigió y se testea.'],
-  ['Datos mínimos', 'No se guardan las respuestas del formulario; las IPs se hashean con sal y se purgan a los 2 días.'],
+  ['Sin estado persistente', 'La demo no tiene base de datos ni guarda las respuestas del formulario: menos piezas, nada que proteger ni que migrar.'],
 ];
 
 export default function ArchitectureSection() {
