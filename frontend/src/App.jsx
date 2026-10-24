@@ -123,7 +123,7 @@ export default function App() {
       <footer>
         <div className="container">
           <span><img src={logo} alt="FIUBA" />Proyecto académico · FIUBA · Ingeniería en IoT y Machine Learning</span>
-          <span>© 2026 Rodrigo Pinedo · <a href={GITHUB} target="_blank" rel="noreferrer">GitHub</a> · <a href="https://www.linkedin.com/in/rodrigopinedo/" target="_blank" rel="noreferrer">LinkedIn</a></span>
+          <span>Hecho en <a href="https://mydatavibe.com" target="_blank" rel="noreferrer">mydatavibe.com</a> · © 2026 Rodrigo Pinedo · <a href={GITHUB} target="_blank" rel="noreferrer">GitHub</a> · <a href="https://www.linkedin.com/in/rodrigopinedo/" target="_blank" rel="noreferrer">LinkedIn</a></span>
         </div>
       </footer>
     </>

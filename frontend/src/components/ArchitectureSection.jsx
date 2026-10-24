@@ -1,9 +1,11 @@
+import VersionsDiagram from './VersionsDiagram.jsx';
+
 const FLOW = [
   ['Formulario', 'El usuario responde unas pocas preguntas en español. La app las traduce al formato del modelo (19 variables).'],
   ['CDN de Vercel', 'Sirve la app React estática desde el subdominio bankml.mydatavibe.com.'],
   ['Función Python', 'FastAPI valida cada campo, limita el uso por IP y por día, y tarda ~40 ms.'],
   ['Motor del modelo', '100 árboles LightGBM exportados a JSON; predicción, calibración y TreeSHAP en Python puro.'],
-  ['Neon Postgres', 'Guarda solo (prioridad, probabilidad, fecha): ni datos del formulario ni IPs en claro.'],
+  ['Neon Postgres (opcional)', 'Guarda solo (prioridad, probabilidad, fecha): ni datos del formulario ni IPs en claro. Sin base conectada, usa memoria por instancia.'],
 ];
 
 const DECISIONS = [
@@ -32,23 +34,7 @@ export default function ArchitectureSection() {
         </div>
 
         <h3 style={{ margin: '28px 0 12px' }}>De la v1 a la v2</h3>
-        <div className="timeline">
-          <div className="card hover">
-            <span className="pill warn">2025 · v1</span>
-            <h3 style={{ marginTop: 8 }}>AWS</h3>
-            <p>Frontend en S3, backend Flask en EC2 con Docker. El modelo vivía en un contenedor que imita el contrato de SageMaker (<code>/ping</code>, <code>/invocations</code>).</p>
-            <span className="pill">S3</span><span className="pill">EC2</span><span className="pill">Docker</span>
-            <p style={{ marginTop: 10 }}><strong>Aclaración:</strong> no se usó SageMaker administrado; el contenedor corría simulado sobre EC2.</p>
-          </div>
-          <div className="arrow" aria-hidden="true">→</div>
-          <div className="card hover">
-            <span className="pill ok">2026 · v2</span>
-            <h3 style={{ marginTop: 8 }}>Vercel</h3>
-            <p>Frontend estático + función Python, historial en Neon Postgres, despliegue continuo desde GitHub y dominio propio.</p>
-            <span className="pill">Vercel</span><span className="pill">FastAPI</span><span className="pill">Neon</span><span className="pill">React</span>
-            <p style={{ marginTop: 10 }}>La migración destapó y corrigió tres errores de la v1 (resultado invertido, variable faltante y mes anulado).</p>
-          </div>
-        </div>
+        <VersionsDiagram />
 
         <h3 style={{ margin: '28px 0 12px' }}>Decisiones de diseño</h3>
         <div className="grid cols-3">
