@@ -20,11 +20,13 @@ LIMIT_PER_DAY_GLOBAL = int(os.environ.get("LIMIT_PER_DAY_GLOBAL", "1500"))
 SALT = os.environ.get("IP_HASH_SALT", "bankml-demo")
 DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
 RETENTION = "2 days"
+TIER_CODES = {"baja": 0, "media": 1, "alta": 2}
+TIER_NAMES = {v: k for k, v in TIER_CODES.items()}
 
 DDL = """
 CREATE TABLE IF NOT EXISTS predictions (
     id BIGSERIAL PRIMARY KEY,
-    prediction SMALLINT NOT NULL,
+    tier SMALLINT NOT NULL,
     probability REAL NOT NULL,
     ip_hash CHAR(16) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -88,17 +90,17 @@ class Guard:
                 pass  # degradar a memoria
         return self._check_memory(h)
 
-    def record(self, ip: str, prediction: int, probability: float) -> None:
+    def record(self, ip: str, tier: str, probability: float) -> None:
         h = _hash(ip)
-        self._mem_history.appendleft({"prediction": prediction, "probability": probability,
+        self._mem_history.appendleft({"tier": tier, "probability": probability,
                                       "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
         if not self.db_enabled:
             self._mem_hits[h].append(time.time())
             return
         try:
             with self._conn() as conn:
-                conn.execute("INSERT INTO predictions (prediction, probability, ip_hash) VALUES (%s, %s, %s)",
-                             (prediction, probability, h))
+                conn.execute("INSERT INTO predictions (tier, probability, ip_hash) VALUES (%s, %s, %s)",
+                             (TIER_CODES[tier], probability, h))
                 if random.random() < 0.05:  # purga ocasional: mantiene la tabla diminuta
                     conn.execute(f"DELETE FROM predictions WHERE created_at < now() - interval '{RETENTION}'")
         except Exception:
@@ -109,11 +111,11 @@ class Guard:
             try:
                 with self._conn() as conn:
                     rows = conn.execute(
-                        "SELECT id, prediction, probability, created_at FROM predictions ORDER BY id DESC LIMIT %s",
+                        "SELECT id, tier, probability, created_at FROM predictions ORDER BY id DESC LIMIT %s",
                         (limit,),
                     ).fetchall()
-                return [{"id": r[0], "prediction": r[1], "probability": r[2], "created_at": r[3].isoformat()}
-                        for r in rows]
+                return [{"id": r[0], "tier": TIER_NAMES.get(r[1], "baja"), "probability": r[2],
+                         "created_at": r[3].isoformat()} for r in rows]
             except Exception:
                 pass
         return [{"id": i, **r} for i, r in enumerate(list(self._mem_history)[:limit])]

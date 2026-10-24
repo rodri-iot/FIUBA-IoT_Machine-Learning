@@ -30,7 +30,8 @@ Todo vive bajo un mismo dominio (`bankml.mydatavibe.com`), así que no hay CORS 
 2. **Validación** (Pydantic): enums y rangos derivados del dataset; campos extra rechazados; máximo 4 KB.
 3. **Guard:** una sola consulta SQL cuenta predicciones del minuto/día por IP hasheada y del día global; si se excede algún tope responde `429` con `Retry-After`.
 4. **Inferencia** (`api/_model.py`): preprocesamiento, ensamble de árboles y **TreeSHAP exacto** en Python puro (~40 ms).
-5. Se registra `(predicción, probabilidad, ip_hash, fecha)` — **no se guardan los datos del formulario**.
+5. Se calibra la probabilidad (Platt) y se asigna la prioridad (alta ≥ 30 %, media ≥ 12 %, baja).
+6. Se registra `(prioridad, probabilidad, ip_hash, fecha)` — **no se guardan los datos del formulario**.
 
 ## Decisiones y trade-offs
 
@@ -43,6 +44,8 @@ Todo vive bajo un mismo dominio (`bankml.mydatavibe.com`), así que no hay CORS 
 | Límites en la aplicación y en base de datos | Los contadores compartidos funcionan aunque haya varias instancias; evitan que bots agoten la cuota. | Un `SELECT` extra por request; si la DB falla se degrada a contadores en memoria por instancia. |
 | Neon Postgres en vez de SQLite | El filesystem de una función serverless es efímero. | Se duerme por inactividad (~1 s para despertar). |
 | No guardar inputs | Minimiza datos y almacenamiento. | Menos riqueza para análisis posterior. |
+| Probabilidad calibrada + prioridad en vez de "sí/no" | El entrenamiento con `scale_pos_weight` infla las probabilidades; un umbral de 0,5 clasifica como "sí" al 18 % y mezcla aciertos con falsos positivos. La calibración (Brier 0,149 → 0,074) permite hablar en probabilidades reales y priorizar. | Los umbrales de prioridad son de negocio: se fijaron mirando precisión y cobertura en test y conviene revisarlos con el costo real de contacto. |
+| UI que traduce al formato del dataset | Las 19 variables originales incluyen campos que el modelo ignora (`duration`, `day_of_week`) y 5 macro que son una foto del trimestre. El formulario hace 11 preguntas y mapea el resto. | El mapeo vive en el frontend (`frontend/src/lib/config.js`); la API sigue validando el contrato completo. |
 | Preprocesamiento con semántica de entrenamiento | La v1 aplicaba `get_dummies(drop_first=True)` a un único registro y anulaba la variable `month` (26 % de predicciones distintas a las del lote). | El preprocesamiento vive en dos lugares (entrenamiento y API); el test de paridad los mantiene alineados. |
 
 ## v1 en AWS (histórico)

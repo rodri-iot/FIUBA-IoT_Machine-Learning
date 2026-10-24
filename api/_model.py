@@ -35,6 +35,10 @@ class Model:
         self.pca_mean = spec["econ_pca"]["mean"]
         self.pca_component = spec["econ_pca"]["component"]
         self.sigmoid = spec["sigmoid"]
+        self.cal_a = spec["calibration"]["a"]
+        self.cal_b = spec["calibration"]["b"]
+        self.base_rate = spec["calibration"]["base_rate"]
+        self.tiers = sorted(spec["tiers"], key=lambda t: -t["min"])  # de mayor a menor prioridad
         self.trees = spec["trees"]
         self.base_value = sum(self._expected_value(t) for t in self.trees)
 
@@ -88,7 +92,15 @@ class Model:
         return total
 
     def probability(self, x: list[float]) -> float:
+        """Score crudo del modelo (sesgado hacia 'sí' por scale_pos_weight; NO es una probabilidad real)."""
         return 1.0 / (1.0 + math.exp(-self.sigmoid * self.raw_score(x)))
+
+    def calibrated_probability(self, x: list[float]) -> float:
+        """Probabilidad calibrada (Platt sobre el set de test): coincide con la tasa real observada."""
+        return 1.0 / (1.0 + math.exp(-(self.cal_a * self.raw_score(x) + self.cal_b)))
+
+    def tier(self, calibrated: float) -> str:
+        return next(t["id"] for t in self.tiers if calibrated >= t["min"])
 
     # ---- TreeSHAP (Lundberg et al.), mismo algoritmo que LightGBM ----------
     @staticmethod

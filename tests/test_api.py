@@ -1,4 +1,5 @@
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -33,17 +34,23 @@ def test_predict_returns_prediction_and_contributions():
     r = client.post("/api/predict", json=SAMPLE)
     assert r.status_code == 200
     body = r.json()
-    assert body["prediction"] in (0, 1)
-    assert 0 <= body["probability"] <= 1
-    assert (body["prediction"] == 1) == (body["probability"] >= 0.5)
+    assert body["tier"] in ("alta", "media", "baja")
+    assert 0 <= body["probability"] <= 1 and 0 <= body["score"] <= 1
+    assert math.isclose(body["lift"], body["probability"] / body["base_rate"], abs_tol=0.02)
     assert len(body["contributions"]) == 19
 
 
-def test_contributions_reconstruct_probability():
-    import math
+def test_contributions_reconstruct_model_score():
     body = client.post("/api/predict", json=SAMPLE).json()
     logit = body["base_value"] + sum(body["contributions"].values())
-    assert math.isclose(1 / (1 + math.exp(-logit)), body["probability"], abs_tol=2e-3)
+    assert math.isclose(1 / (1 + math.exp(-logit)), body["score"], abs_tol=2e-3)
+
+
+def test_calibrated_probability_is_below_raw_score_and_tier_matches():
+    body = client.post("/api/predict", json=SAMPLE).json()
+    assert body["probability"] < body["score"]  # el score crudo está inflado por scale_pos_weight
+    expected = "alta" if body["probability"] >= 0.30 else "media" if body["probability"] >= 0.12 else "baja"
+    assert body["tier"] == expected
 
 
 def test_numbers_as_strings_are_accepted():
@@ -86,7 +93,7 @@ def test_global_daily_cap(monkeypatch):
 def test_history_has_no_inputs():
     client.post("/api/predict", json=SAMPLE)
     rows = client.get("/api/history").json()
-    assert rows and set(rows[0]) == {"id", "prediction", "probability", "created_at"}
+    assert rows and set(rows[0]) == {"id", "tier", "probability", "created_at"}
 
 
 def test_health():

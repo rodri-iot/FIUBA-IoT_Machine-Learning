@@ -1,165 +1,131 @@
-import { useState } from 'react';
-import './App.css';
-import FormInput from './components/FormInput.jsx';
-import FeatureTable from './components/FeatureTable.jsx';
-import SHAP from './components/SHAP.jsx';
-import logo from './assets/logo-fiuba.png';
-import HistoryPanel from './components/HistoryPanel';
+import { useRef, useState } from 'react';
+import ClientForm from './components/ClientForm.jsx';
+import ResultPanel from './components/ResultPanel.jsx';
+import ModelSection from './components/ModelSection.jsx';
+import InsightSection from './components/InsightSection.jsx';
 import ArchitectureSection from './components/ArchitectureSection.jsx';
+import HistoryPanel from './components/HistoryPanel.jsx';
+import logo from './assets/logo-fiuba.png';
+import { EMPTY_FORM, INSIGHTS, PRESETS, buildPayload, num, pct, validate } from './lib/config.js';
 
+const GITHUB = 'https://github.com/rodri-iot/FIUBA-IoT_Machine-Learning';
 
-function App() {
-  const [formData, setFormData] = useState({
-    age: '', job: '', marital: '', education: '', default: '', housing: '', loan: '',
-    contact: '', month: '', day_of_week: '', duration: '', campaign: '', pdays: '',
-    previous: '', poutcome: '', 'emp.var.rate': '', 'cons.price.idx': '', 'cons.conf.idx': '', euribor3m: '', 'nr.employed': ''
-  });
+export default function App() {
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState({});
   const [result, setResult] = useState(null);
-  const [contributions, setContributions] = useState(null);
+  const [resultForm, setResultForm] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [historyKey, setHistoryKey] = useState(0);
+  const tryRef = useRef(null);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const onChange = (name, value) => {
+    setForm((f) => ({ ...f, [name]: value }));
+    setErrors((e) => ({ ...e, [name]: undefined }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-
-    const isValid = Object.values(formData).every((value) => value !== '');
-    if (!isValid) {
-      alert("Por favor completa todos los campos antes de predecir.");
-      return;
-    }
-
-
+  const predict = async (values) => {
+    const e = validate(values);
+    setErrors(e);
+    if (Object.keys(e).length) return;
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch('/api/predict', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(buildPayload(values)),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setResult(null); setContributions(null);
-        setError(res.status === 429 ? data.error
-          : res.status === 422 ? "Algún valor está fuera del rango permitido. Revisá la tabla de campos."
-          : "Ocurrió un error al contactar el servidor de predicción.");
+        setError(res.status === 429 ? data.error : 'No pudimos calcular el resultado. Probá de nuevo en unos segundos.');
         return;
       }
       setResult(data);
-      setContributions(data.contributions);
-      setHistoryKey(k => k + 1);
-    } catch (err) {
-      console.error(err);
-      setError("Ocurrió un error al contactar el servidor de predicción.");
+      setResultForm(values);
+      setHistoryKey((k) => k + 1);
+      if (window.innerWidth <= 920) requestAnimationFrame(() => document.getElementById('resultado')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    } catch {
+      setError('No pudimos conectar con el servidor. Revisá tu conexión y probá de nuevo.');
     } finally {
       setLoading(false);
     }
   };
 
-  const loadCase = (name) => {
-    const cases = {
-      rodrigo: {
-        age: 35, job: 'technician', marital: 'single', education: 'university.degree', default: 'no',
-        housing: 'yes', loan: 'no', contact: 'cellular', month: 'may', day_of_week: 'mon', duration: 100,
-        campaign: 2, pdays: 999, previous: 0, poutcome: 'nonexistent', 'emp.var.rate': 1.1,
-        'cons.price.idx': 93.994, 'cons.conf.idx': -36.4, euribor3m: 4.857, 'nr.employed': 5191
-      },
-      jurgen: {
-        age: 45, job: 'admin.', marital: 'married', education: 'high.school', default: 'no',
-        housing: 'yes', loan: 'yes', contact: 'telephone', month: 'jul', day_of_week: 'wed', duration: 150,
-        campaign: 3, pdays: 7, previous: 1, poutcome: 'success', 'emp.var.rate': 1.4,
-        'cons.price.idx': 92.893, 'cons.conf.idx': -46.2, euribor3m: 4.857, 'nr.employed': 5228.1
-      },
-      shirley: {
-        age: 59, job: 'blue-collar', marital: 'married', education: 'basic.4y', default: 'no',
-        housing: 'yes', loan: 'yes', contact: 'telephone', month: 'nov', day_of_week: 'thu', duration: 57,
-        campaign: 3, pdays: 999, previous: 0, poutcome: 'nonexistent', 'emp.var.rate': -1.8, 
-        'cons.price.idx': 92.893, 'cons.conf.idx': -46.2, euribor3m: 1.299, 'nr.employed': 5099.1
-      }
-    };
-    setFormData(cases[name]);
+  const loadPreset = (preset) => {
+    setForm(preset.form);
+    predict(preset.form);
+    tryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  const submit = (ev) => { ev.preventDefault(); predict(form); };
+  const reset = () => { setForm(EMPTY_FORM); setErrors({}); setResult(null); setError(null); };
+
   return (
-    <div className="App" style={{ padding: '2rem', background: '#f5f5f5' }}>
-     
-      <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
-        
-        <div style={{ flex: 1, maxWidth: '350px' }}>
-          <img src={logo} alt="FIUBA logo" style={{ height: '100px', marginBottom: '1rem' }} />
-          <h2 style={{ borderBottom: '2px solid black', paddingBottom: '0.5rem' }}>Predicción Inteligente Bancaria</h2>
-          <p><strong>🧠 Simulación de una campaña de marketing telefónico real</strong></p>
-          <p><strong>Objetivo:</strong> Predecir si un cliente hara un <strong>depósito a plazo</strong>.</p>
-          <p><strong>Caso:</strong> Un operador del Banco “Portugal” realiza una <strong>llamada telefónica al cliente</strong> con el objetivo de convencerlo de que contrate un <strong>depósito a plazo</strong>.</p>
-          <p><strong>Llamada:</strong> El operador completa el formulario con la información que el cliente le brinda en tiempo real.</p>
-          <p><strong>Machine Learning:</strong> Al presionar “Predecir”, el sistema utiliza un modelo entrenado con LightGBM para estimar si el cliente aceptará o no la propuesta.</p>
-          <p><strong>Resultado:</strong> Además de la predicción, el sistema muestra la <strong>importancia relativa de las variables (SHAP)</strong> utilizadas por el modelo para tomar la decisión.</p>
-       <HistoryPanel refreshKey={historyKey} />
-      
+    <>
+      <header className="topbar">
+        <div className="container">
+          <a className="brand" href="#top"><span className="brand-mark" aria-hidden="true">◎</span>Bank Propensity Scorer</a>
+          <nav className="nav" aria-label="Secciones">
+            <a href="#probar">Probar</a><a href="#modelo">Modelo</a><a href="#hallazgo">Hallazgo</a><a href="#arquitectura">Arquitectura</a>
+            <a className="gh" href={GITHUB} target="_blank" rel="noreferrer">GitHub</a>
+          </nav>
         </div>
+      </header>
 
-        <div style={{ flex: 2 }}>
-          <h3>Formulario de Predicción</h3>
-          <p style={{ fontSize: '0.95rem', marginBottom: '0.5rem' }}>
-            Selecciona un caso precargado para simular la predicción:
-          </p>
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-            <button onClick={() => loadCase('rodrigo')}>📋 Caso Rodrigo</button>
-            <button onClick={() => loadCase('jurgen')}>📋 Caso Jurgen</button>
-            <button onClick={() => loadCase('shirley')}>📋 Caso Shirley</button>
+      <main id="top">
+        <section className="hero">
+          <div className="container">
+            <span className="eyebrow">Machine Learning · Marketing bancario</span>
+            <h1>Priorizá las llamadas con más chances de cerrar un <span>depósito a plazo</span></h1>
+            <p className="lead">
+              Un modelo entrenado con {INSIGHTS.meta.n_total.toLocaleString('es-AR')} llamadas reales estima qué tan probable es que un cliente contrate,
+              te dice por qué y te sugiere a quién llamar primero.
+            </p>
+            <div className="hero-actions">
+              <a className="btn primary" href="#probar">Probar ahora</a>
+              <a className="btn" href="#arquitectura">Ver la arquitectura</a>
+            </div>
+            <div className="stats">
+              <div className="stat"><b>{num(INSIGHTS.meta.auc, 2)}</b><span>AUC en datos nunca vistos</span></div>
+              <div className="stat"><b>{num(INSIGHTS.tiers[0].lift)}×</b><span>más contrataciones en la prioridad alta</span></div>
+              <div className="stat"><b>{pct(INSIGHTS.tiers[0].capture)}</b><span>de las ventas con el {pct(INSIGHTS.tiers[0].share)} de las llamadas</span></div>
+            </div>
           </div>
+        </section>
 
-          <form onSubmit={handleSubmit} className="form-card">
-            <FormInput formData={formData} handleChange={handleChange} />
-
-            <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-              <button type="submit" disabled={loading}>{loading ? 'Consultando el modelo…' : 'Predecir'}</button>
+        <section className="block" id="probar" ref={tryRef}>
+          <div className="container">
+            <div className="section-head">
+              <h2>Probalo con un cliente</h2>
+              <p>Elegí un perfil de ejemplo para ver un resultado al instante, o cargá los datos de un cliente.</p>
             </div>
-          </form>
-
-          {error && (
-            <div role="alert" style={{ background: '#fff3f3', color: '#a33', padding: '1rem', borderRadius: '12px', maxWidth: '600px', margin: '1rem auto', border: '1px solid #e0a0a0' }}>{error}</div>
-          )}
-
-          {result && (
-            <div style={{ background: '#f0f8ff', padding: '1.5rem', borderRadius: '12px', maxWidth: '600px', margin: '1rem auto', border: '2px solid #ccc' }}>
-              <h3 style={{ marginBottom: '1rem' }}>📊 Resultado del Modelo</h3>
-              <p style={{ fontSize: '1.1rem' }}>
-                <strong>Predicción:</strong>{' '}
-                {result.prediction === 1 ? (
-                  <span style={{ color: 'green', fontWeight: 'bold' }}>🟢 El cliente SÍ hará un depósito a plazo.</span>
-                ) : (
-                  <span style={{ color: 'red', fontWeight: 'bold' }}>🔴 El cliente NO hará un depósito a plazo.</span>
-                )}
-              </p>
-              <p style={{ fontSize: '1rem', marginTop: '0.5rem' }}>
-                <strong>Probabilidad de “sí”:</strong> {result.probability?.toFixed(4)}
-              </p>
+            <div className="presets">
+              {PRESETS.map((p) => (
+                <button key={p.id} type="button" className="preset" onClick={() => loadPreset(p)}>
+                  <header><span className="avatar" aria-hidden="true">{p.name[0]}</span><span><strong>{p.name}</strong><small>{p.tag}</small></span></header>
+                  <p>{p.story}</p>
+                </button>
+              ))}
             </div>
-          )}
-            
-          <SHAP contributions={contributions} />
+            <div className="try">
+              <ClientForm form={form} errors={errors} loading={loading} onChange={onChange} onSubmit={submit} onReset={reset} />
+              <ResultPanel result={result} form={resultForm ?? form} loading={loading} error={error} />
+            </div>
+          </div>
+        </section>
 
-           
+        <HistoryPanel refreshKey={historyKey} />
+        <ModelSection />
+        <InsightSection />
+        <ArchitectureSection />
+      </main>
+
+      <footer>
+        <div className="container">
+          <span><img src={logo} alt="FIUBA" />Proyecto académico · FIUBA · Ingeniería en IoT y Machine Learning</span>
+          <span>© 2026 Rodrigo Pinedo · <a href={GITHUB} target="_blank" rel="noreferrer">GitHub</a> · <a href="https://www.linkedin.com/in/rodrigopinedo/" target="_blank" rel="noreferrer">LinkedIn</a></span>
         </div>
-
-        
-      </div>
-
-      <FeatureTable />
-
-      <ArchitectureSection />
-            
-      <footer style={{ marginTop: '2rem', fontSize: '0.8rem', textAlign: 'center', color: '#555' }}>
-        © 2025 – Rodrigo Jurgen Pinedo Nava · Proyecto académico FIUBA · ML en Vercel (v1 en AWS) | <a href="https://github.com/rodri-iot/FIUBA-IoT_Machine-Learning/tree/main" target="_blank">GitHub</a> | <a href="https://www.linkedin.com/in/rodrigopinedo/" target="_blank">LinkedIn</a>
       </footer>
-    </div>
+    </>
   );
 }
-
-export default App;
