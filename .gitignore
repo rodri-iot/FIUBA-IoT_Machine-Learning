@@ -181,3 +181,12 @@ cython_debug/
 .env.*
 .vscode/
 .ssh/
+
+# Vercel / local
+.vercel
+.env*.local
+frontend/dist
+frontend/node_modules
+*.pem
+.ssh/
+

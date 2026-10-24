@@ -1,11 +1,11 @@
 export default function FormInput({ formData, handleChange}) {
   const selectFields  = {
     job: ['admin.', 'technician', 'blue-collar', 'entrepreneur', 'services', 'management', 'unemployed', 'self-employed', 'housemaid', 'retired', 'student', 'unknown'],
-    marital: ['single', 'married', 'divorced'],
+    marital: ['single', 'married', 'divorced', 'unknown'],
     education: ['basic.4y', 'basic.6y', 'basic.9y', 'high.school', 'university.degree', 'professional.course', 'illiterate', 'unknown'],
-    default: ['yes', 'no'],
-    housing: ['yes', 'no'],
-    loan: ['yes', 'no'],
+    default: ['yes', 'no', 'unknown'],
+    housing: ['yes', 'no', 'unknown'],
+    loan: ['yes', 'no', 'unknown'],
     contact: ['cellular', 'telephone'],
     month: ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'],
     day_of_week: ['mon','tue','wed','thu','fri'],
@@ -14,7 +14,7 @@ export default function FormInput({ formData, handleChange}) {
 
    const numericFields = [
     'age', 'duration', 'campaign', 'pdays', 'previous',
-    'emp.var.rate', 'cons.price.idx', 'cons.conf.idx', 'euribor3m'
+    'emp.var.rate', 'cons.price.idx', 'cons.conf.idx', 'euribor3m', 'nr.employed'
   ];
 
   return (
@@ -32,6 +32,7 @@ export default function FormInput({ formData, handleChange}) {
           ) : numericFields.includes(name) ? (
             <input
               type="number"
+              step="any"
               name={name}
               value={value}
               onChange={handleChange}
