@@ -5,7 +5,8 @@
 Modelo de Machine Learning (LightGBM) que estima la **probabilidad calibrada** de que un cliente contrate un **depósito a plazo fijo** a partir de los datos de una llamada de marketing, la traduce a una **prioridad de llamada** (alta / media / baja) y explica qué factores la empujaron.
 
 🌐 **Demo:** https://bankml.mydatavibe.com  
-🎓 Proyecto académico — FIUBA, Ingeniería en IoT y Machine Learning
+🎓 Proyecto académico — FIUBA, Ingeniería en IoT y Machine Learning  
+🛠️ Hecho en [mydatavibe.com](https://mydatavibe.com)
 
 ## 🧠 Qué hace
 

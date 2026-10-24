@@ -200,6 +200,26 @@ svg.chart .axis { stroke: var(--muted); stroke-width: 1; opacity: .5; }
 .pill.ok { background: var(--high-soft); color: var(--high); } .pill.warn { background: var(--mid-soft); color: var(--mid); }
 .card h3 { font-size: 1.02rem; margin-bottom: 6px; } .card p { color: var(--muted); font-size: .92rem; } .card ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: .9rem; }
 
+/* ---------- Diagramas v1 / v2 ---------- */
+svg.dg { width: 100%; height: auto; display: block; margin: 12px 0; }
+.dg-node { fill: var(--surface-2); stroke: var(--border); stroke-width: 1.4; }
+.dg-node.ok { fill: var(--high-soft); stroke: var(--high); }
+.dg-node.warn { fill: var(--mid-soft); stroke: var(--mid); }
+.dg-node.dashed, .dg-arrow.dashed { stroke-dasharray: 5 4; }
+.dg-node.dashed { fill: transparent; stroke: var(--muted); }
+.dg-zone { fill: none; stroke: var(--border); stroke-width: 1.4; stroke-dasharray: 2 5; }
+.dg-zone.ok { stroke: var(--high); opacity: .6; }
+.dg-title { font-size: 12.5px; font-weight: 700; fill: var(--text); font-family: inherit; }
+.dg-sub { font-size: 10.5px; fill: var(--muted); font-family: inherit; }
+.dg-zonelabel { font-size: 11px; fill: var(--muted); font-family: inherit; }
+.dg-arrow { fill: none; stroke: var(--muted); stroke-width: 1.5; }
+.dg-head { fill: var(--muted); }
+.compare { width: 100%; border-collapse: collapse; font-size: .88rem; min-width: 640px; }
+.compare th, .compare td { text-align: left; padding: 10px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.compare thead th { font-size: .76rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.compare tbody th { white-space: nowrap; }
+.compare td.why { color: var(--muted); }
+
 /* ---------- Historial / footer ---------- */
 .history { width: 100%; border-collapse: collapse; font-size: .88rem; }
 .history td, .history th { padding: 8px 6px; border-bottom: 1px solid var(--border); text-align: left; }
