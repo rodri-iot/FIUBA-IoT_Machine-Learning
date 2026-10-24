@@ -4,31 +4,22 @@ Un único endpoint de inferencia devuelve predicción + contribuciones por varia
 así cada consulta de un usuario consume UNA sola invocación (cuida el free tier).
 """
 import sys
-import warnings
 from pathlib import Path
 from typing import Literal
 
-ROOT = Path(__file__).resolve().parent.parent
-# El pipeline fue serializado con `from preprocessing import CustomPreprocessor`.
-sys.path.insert(0, str(ROOT / "ml"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import joblib  # noqa: E402
-import pandas as pd  # noqa: E402
-from fastapi import FastAPI, HTTPException, Request  # noqa: E402
+from fastapi import FastAPI, Request  # noqa: E402
 from fastapi.responses import JSONResponse  # noqa: E402
 from pydantic import BaseModel, ConfigDict, Field  # noqa: E402
 
 from _guard import Guard, client_ip  # noqa: E402
-
-warnings.filterwarnings("ignore", category=FutureWarning)
+from _model import Model  # noqa: E402
 
 MAX_BODY_BYTES = 4096
 HISTORY_LIMIT = 20
 
-model = joblib.load(ROOT / "models" / "pipeline_model.joblib")
-preprocessing = model.named_steps["preprocessing"]
-classifier = model.named_steps["classifier"]
+model = Model()  # inferencia en Python puro (ver api/_model.py)
 guard = Guard()
 
 app = FastAPI(title="Bank ML API", docs_url=None, redoc_url=None, openapi_url=None)
@@ -78,7 +69,7 @@ async def limit_body_size(request: Request, call_next):
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "model_features": len(preprocessing.feature_names_), "db": guard.db_enabled}
+    return {"status": "ok", "model_features": len(model.feature_names), "trees": len(model.trees), "db": guard.db_enabled}
 
 
 @app.post("/api/predict")
@@ -87,14 +78,10 @@ def predict(payload: PredictionInput, request: Request):
     if not decision.allowed:
         return _error(429, decision.message, decision.retry_after)
 
-    row = pd.DataFrame([payload.model_dump(by_alias=True)])
-    proba = float(model.predict_proba(row)[0][1])
+    x = model.encode(payload.model_dump(by_alias=True))
+    proba = model.probability(x)
     prediction = int(proba >= 0.5)
-
-    features = preprocessing.transform(row)
-    contrib = classifier.predict(features, pred_contrib=True)[0]  # log-odds; último = sesgo base
-    names = preprocessing.feature_names_
-    contributions = {n: round(float(v), 4) for n, v in zip(names, contrib[:-1])}
+    contributions = {n: round(v, 4) for n, v in zip(model.feature_names, model.contributions(x))}
     contributions = dict(sorted(contributions.items(), key=lambda kv: abs(kv[1]), reverse=True))
 
     guard.record(client_ip(request), prediction, proba)
@@ -102,7 +89,7 @@ def predict(payload: PredictionInput, request: Request):
         "prediction": prediction,  # 1 = SÍ suscribe el depósito, 0 = NO
         "probability": round(proba, 4),
         "contributions": contributions,
-        "base_value": round(float(contrib[-1]), 4),
+        "base_value": round(model.base_value, 4),
     }
 
 

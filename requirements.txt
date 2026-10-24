@@ -1,11 +1,5 @@
 # Dependencias de runtime de la API (Vercel Functions, Python 3.12).
-# Versiones fijadas = las mismas con las que se serializó models/pipeline_model.joblib.
+# La inferencia es Python puro (api/_model.py): sin LightGBM/scikit-learn/numpy en producción.
 fastapi==0.115.6
 pydantic==2.10.4
-lightgbm==4.5.0
-scikit-learn==1.5.2
-pandas==2.2.3
-numpy==2.1.3
-scipy==1.14.1
-joblib==1.4.2
 psycopg[binary]==3.2.3

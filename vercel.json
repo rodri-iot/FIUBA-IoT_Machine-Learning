@@ -5,7 +5,7 @@
   "functions": {
     "api/index.py": {
       "maxDuration": 10,
-      "includeFiles": "{models/pipeline_model.joblib,ml/preprocessing.py}"
+      "includeFiles": "models/model.json"
     }
   },
   "headers": [
