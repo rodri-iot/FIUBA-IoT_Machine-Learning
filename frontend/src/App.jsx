@@ -4,7 +4,6 @@ import ResultPanel from './components/ResultPanel.jsx';
 import ModelSection from './components/ModelSection.jsx';
 import InsightSection from './components/InsightSection.jsx';
 import ArchitectureSection from './components/ArchitectureSection.jsx';
-import HistoryPanel from './components/HistoryPanel.jsx';
 import logo from './assets/logo-fiuba.png';
 import { EMPTY_FORM, INSIGHTS, PRESETS, buildPayload, num, pct, validate } from './lib/config.js';
 
@@ -17,7 +16,6 @@ export default function App() {
   const [resultForm, setResultForm] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [historyKey, setHistoryKey] = useState(0);
   const tryRef = useRef(null);
 
   const onChange = (name, value) => {
@@ -45,7 +43,6 @@ export default function App() {
       }
       setResult(data);
       setResultForm(values);
-      setHistoryKey((k) => k + 1);
       if (window.innerWidth <= 920) requestAnimationFrame(() => document.getElementById('resultado')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     } catch {
       setError('No pudimos conectar con el servidor. Revisá tu conexión y probá de nuevo.');
@@ -117,7 +114,6 @@ export default function App() {
           </div>
         </section>
 
-        <HistoryPanel refreshKey={historyKey} />
         <ModelSection />
         <InsightSection />
         <ArchitectureSection />

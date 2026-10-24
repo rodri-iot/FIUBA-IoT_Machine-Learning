@@ -17,7 +17,6 @@ from _guard import Guard, client_ip  # noqa: E402
 from _model import Model  # noqa: E402
 
 MAX_BODY_BYTES = 4096
-HISTORY_LIMIT = 20
 
 model = Model()  # inferencia en Python puro (ver api/_model.py)
 guard = Guard()
@@ -69,7 +68,7 @@ async def limit_body_size(request: Request, call_next):
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "model_features": len(model.feature_names), "trees": len(model.trees), "db": guard.db_enabled}
+    return {"status": "ok", "model_features": len(model.feature_names), "trees": len(model.trees)}
 
 
 @app.post("/api/predict")
@@ -85,7 +84,7 @@ def predict(payload: PredictionInput, request: Request):
     contributions = {n: round(v, 4) for n, v in zip(model.feature_names, model.contributions(x))}
     contributions = dict(sorted(contributions.items(), key=lambda kv: abs(kv[1]), reverse=True))
 
-    guard.record(client_ip(request), tier, probability)
+    guard.record(client_ip(request))
     return {
         "tier": tier,  # prioridad de llamada: alta | media | baja
         "probability": round(probability, 4),  # calibrada: coincide con la tasa real observada
@@ -95,11 +94,6 @@ def predict(payload: PredictionInput, request: Request):
         "contributions": contributions,
         "base_value": round(model.base_value, 4),
     }
-
-
-@app.get("/api/history")
-def history():
-    return guard.history(HISTORY_LIMIT)
 
 
 @app.exception_handler(Exception)

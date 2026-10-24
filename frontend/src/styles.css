@@ -220,9 +220,7 @@ svg.dg { width: 100%; height: auto; display: block; margin: 12px 0; }
 .compare tbody th { white-space: nowrap; }
 .compare td.why { color: var(--muted); }
 
-/* ---------- Historial / footer ---------- */
-.history { width: 100%; border-collapse: collapse; font-size: .88rem; }
-.history td, .history th { padding: 8px 6px; border-bottom: 1px solid var(--border); text-align: left; }
+/* ---------- Footer / chips ---------- */
 .chip { font-size: .76rem; font-weight: 700; padding: 3px 10px; border-radius: 99px; }
 .chip.high { background: var(--high-soft); color: var(--high); } .chip.mid { background: var(--mid-soft); color: var(--mid); } .chip.low { background: var(--low-soft); color: var(--low); }
 footer { margin-top: 64px; border-top: 1px solid var(--border); padding: 28px 0 40px; color: var(--muted); font-size: .88rem; }

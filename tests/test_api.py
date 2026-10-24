@@ -82,19 +82,20 @@ def test_per_minute_rate_limit():
     assert r.headers["retry-after"] == "60"
 
 
-def test_global_daily_cap(monkeypatch):
-    monkeypatch.setattr(_guard, "LIMIT_PER_DAY_GLOBAL", 2)
+def test_per_day_limit_per_ip(monkeypatch):
+    monkeypatch.setattr(_guard, "LIMIT_PER_DAY_IP", 3)
     monkeypatch.setattr(_guard, "LIMIT_PER_MIN", 100)
-    codes = [client.post("/api/predict", json=SAMPLE, headers={"x-forwarded-for": f"1.1.1.{i}"}).status_code
-             for i in range(4)]
-    assert codes == [200, 200, 429, 429]
+    ip = {"x-forwarded-for": "9.9.9.9"}
+    codes = [client.post("/api/predict", json=SAMPLE, headers=ip).status_code for _ in range(5)]
+    assert codes == [200, 200, 200, 429, 429]
+    other = client.post("/api/predict", json=SAMPLE, headers={"x-forwarded-for": "8.8.8.8"})
+    assert other.status_code == 200  # el límite es por IP
 
 
-def test_history_has_no_inputs():
-    client.post("/api/predict", json=SAMPLE)
-    rows = client.get("/api/history").json()
-    assert rows and set(rows[0]) == {"id", "tier", "probability", "created_at"}
+def test_no_history_endpoint():
+    assert client.get("/api/history").status_code == 404
 
 
 def test_health():
-    assert client.get("/api/health").json()["status"] == "ok"
+    body = client.get("/api/health").json()
+    assert body["status"] == "ok" and "db" not in body

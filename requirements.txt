@@ -3,4 +3,3 @@
 # Sin versiones fijas a propósito: el builder de Vercel elige el Python y necesita wheels recientes.
 fastapi>=0.120
 pydantic>=2.12
-psycopg[binary]>=3.3
