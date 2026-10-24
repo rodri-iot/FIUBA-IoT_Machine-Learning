@@ -1,67 +1,70 @@
-const box = { fill: 'var(--bs-body-bg, #fff)', stroke: '#444', strokeWidth: 1.2, rx: 8 };
-const txt = { fontSize: 12, textAnchor: 'middle', fill: '#222' };
+const FLOW = [
+  ['Formulario', 'El usuario responde unas pocas preguntas en español. La app las traduce al formato del modelo (19 variables).'],
+  ['CDN de Vercel', 'Sirve la app React estática desde el subdominio bankml.mydatavibe.com.'],
+  ['Función Python', 'FastAPI valida cada campo, limita el uso por IP y por día, y tarda ~40 ms.'],
+  ['Motor del modelo', '100 árboles LightGBM exportados a JSON; predicción, calibración y TreeSHAP en Python puro.'],
+  ['Neon Postgres', 'Guarda solo (prioridad, probabilidad, fecha): ni datos del formulario ni IPs en claro.'],
+];
 
-function Node({ x, y, w = 150, h = 54, lines, accent }) {
-  return (
-    <g>
-      <rect x={x} y={y} width={w} height={h} {...box} stroke={accent || box.stroke} />
-      {lines.map((l, i) => (
-        <text key={l} x={x + w / 2} y={y + 22 + i * 16} {...txt} fontWeight={i === 0 ? 700 : 400}>{l}</text>
-      ))}
-    </g>
-  );
-}
-
-const arrow = { stroke: '#444', strokeWidth: 1.4, markerEnd: 'url(#arr)' };
+const DECISIONS = [
+  ['Serverless y gratis', 'El modelo pesa 221 KB: no justifica un servidor siempre prendido. Todo corre en planes gratuitos con topes duros anti-abuso.'],
+  ['Motor propio en lugar del .joblib', 'LightGBM necesita libgomp, que Vercel no incluye. Se exportó el modelo a JSON y se reimplementó la inferencia; un test de paridad lo compara contra LightGBM (tolerancia 1e-8).'],
+  ['Probabilidad calibrada', 'El entrenamiento con scale_pos_weight infla las probabilidades. Se calibró (Platt) y se midió: el error Brier baja a la mitad.'],
+  ['Una sola llamada por consulta', 'La v1 hacía dos requests (predicción y explicación). Ahora una devuelve todo, usando la mitad de la cuota.'],
+  ['Preprocesamiento fiel al entrenamiento', 'La v1 anulaba la variable "mes" en inferencia individual (get_dummies con una sola fila). Se corrigió y se testea.'],
+  ['Datos mínimos', 'No se guardan las respuestas del formulario; las IPs se hashean con sal y se purgan a los 2 días.'],
+];
 
 export default function ArchitectureSection() {
   return (
-    <section style={{ maxWidth: 980, margin: '2rem auto 0', background: '#fff', padding: '1.5rem', borderRadius: 12, boxShadow: '0 0 6px rgba(0,0,0,0.1)', textAlign: 'left' }}>
-      <details>
-        <summary className="accordion-title">🏗️ Arquitectura del proyecto</summary>
+    <section className="block" id="arquitectura">
+      <div className="container">
+        <div className="section-head">
+          <h2>Arquitectura</h2>
+          <p>De una app en AWS a una arquitectura serverless, medida, testeada y sin costos fijos.</p>
+        </div>
 
-        <h4 style={{ marginTop: '1rem' }}>v2 · Vercel (actual)</h4>
-        <svg viewBox="0 0 900 190" role="img" aria-label="Diagrama de arquitectura en Vercel" style={{ width: '100%', height: 'auto' }}>
-          <defs>
-            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-              <path d="M0 0L10 5L0 10z" fill="#444" />
-            </marker>
-          </defs>
-          <Node x={10} y={68} w={130} lines={['Navegador', 'React + Vite']} />
-          <Node x={200} y={68} w={150} lines={['Vercel CDN', 'bankml.mydatavibe.com']} accent="#000" />
-          <Node x={420} y={20} w={190} h={70} lines={['Vercel Function (Python)', 'FastAPI · /api/predict', 'límites anti-abuso']} accent="#000" />
-          <Node x={420} y={112} w={190} lines={['Modelo en JSON (221 KB)', 'motor Python puro']} />
-          <Node x={700} y={20} w={190} h={70} lines={['Neon Postgres', 'historial + contadores', '(free tier, se duerme)']} accent="#2e9e5b" />
-          <path d="M140 95 L200 95" {...arrow} />
-          <path d="M350 85 L420 60" {...arrow} />
-          <path d="M515 90 L515 112" {...arrow} />
-          <path d="M610 55 L700 55" {...arrow} />
-          <text x={305} y={150} {...txt} fontSize={11}>DNS: CNAME en Hostinger</text>
-        </svg>
+        <h3 style={{ margin: '0 0 12px' }}>Cómo viaja una consulta</h3>
+        <div className="flow">
+          {FLOW.map(([t, d]) => (
+            <div className="card hover step" key={t}><h4>{t}</h4><p>{d}</p></div>
+          ))}
+        </div>
 
-        <ul>
-          <li><strong>Una invocación por consulta:</strong> <code>/api/predict</code> devuelve predicción y contribuciones por variable (TreeSHAP exacto sobre un LightGBM exportado a JSON, sin dependencias de ML en producción).</li>
-          <li><strong>Cuidado del free tier:</strong> validación estricta de entrada, tope de 4 KB por request, 6 consultas/min y 40/día por IP (hash), 1500/día globales, y purga automática de datos a los 2 días.</li>
-          <li><strong>Sin servidores que mantener:</strong> serverless, sin instancias ni costos fijos.</li>
-        </ul>
+        <h3 style={{ margin: '28px 0 12px' }}>De la v1 a la v2</h3>
+        <div className="timeline">
+          <div className="card hover">
+            <span className="pill warn">2025 · v1</span>
+            <h3 style={{ marginTop: 8 }}>AWS</h3>
+            <p>Frontend en S3, backend Flask en EC2 con Docker. El modelo vivía en un contenedor que imita el contrato de SageMaker (<code>/ping</code>, <code>/invocations</code>).</p>
+            <span className="pill">S3</span><span className="pill">EC2</span><span className="pill">Docker</span>
+            <p style={{ marginTop: 10 }}><strong>Aclaración:</strong> no se usó SageMaker administrado; el contenedor corría simulado sobre EC2.</p>
+          </div>
+          <div className="arrow" aria-hidden="true">→</div>
+          <div className="card hover">
+            <span className="pill ok">2026 · v2</span>
+            <h3 style={{ marginTop: 8 }}>Vercel</h3>
+            <p>Frontend estático + función Python, historial en Neon Postgres, despliegue continuo desde GitHub y dominio propio.</p>
+            <span className="pill">Vercel</span><span className="pill">FastAPI</span><span className="pill">Neon</span><span className="pill">React</span>
+            <p style={{ marginTop: 10 }}>La migración destapó y corrigió tres errores de la v1 (resultado invertido, variable faltante y mes anulado).</p>
+          </div>
+        </div>
 
-        <h4>v1 · AWS (histórico)</h4>
-        <p>
-          La primera versión (2025) usó <strong>S3</strong> para el frontend estático y <strong>EC2 + Docker</strong> para el backend Flask.
-          El modelo se empaquetó en un contenedor que implementa el contrato de inferencia de SageMaker
-          (<code>/ping</code> e <code>/invocations</code>) para poder migrar a un endpoint real,
-          pero <strong>no se usó SageMaker administrado</strong>: el contenedor corría simulado sobre EC2.
-          El código sigue disponible en <code>legacy/aws/</code>.
-        </p>
+        <h3 style={{ margin: '28px 0 12px' }}>Decisiones de diseño</h3>
+        <div className="grid cols-3">
+          {DECISIONS.map(([t, d]) => (<div className="card hover" key={t}><h3>{t}</h3><p>{d}</p></div>))}
+        </div>
 
-        <h4>Si fuera a producción</h4>
-        <ul>
-          <li>Endpoint de SageMaker (o batch transform) con versionado de modelos en un registry.</li>
-          <li>Monitoreo de drift y de calidad (el modelo depende de variables macroeconómicas trimestrales).</li>
-          <li>Umbral de decisión según costo de contacto vs. valor del depósito.</li>
-          <li>Autenticación para el operador y auditoría de predicciones.</li>
-        </ul>
-      </details>
+        <div className="card" style={{ marginTop: 16 }}>
+          <h3>Si esto fuera a producción</h3>
+          <ul>
+            <li>Servir el modelo en un endpoint administrado (SageMaker u otro) con escalado automático y versionado en un registry.</li>
+            <li>Reentrenar con datos recientes y validar en el tiempo (el patrón actual es propio de 2008–2010).</li>
+            <li>Monitorear drift de datos y de predicciones; elegir el umbral por costo de contacto vs. valor del depósito.</li>
+            <li>Autenticación del operador, auditoría y control de acceso a los datos de clientes.</li>
+          </ul>
+        </div>
+      </div>
     </section>
   );
 }

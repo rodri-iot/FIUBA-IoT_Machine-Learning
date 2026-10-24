@@ -79,15 +79,19 @@ def predict(payload: PredictionInput, request: Request):
         return _error(429, decision.message, decision.retry_after)
 
     x = model.encode(payload.model_dump(by_alias=True))
-    proba = model.probability(x)
-    prediction = int(proba >= 0.5)
+    score = model.probability(x)
+    probability = model.calibrated_probability(x)
+    tier = model.tier(probability)
     contributions = {n: round(v, 4) for n, v in zip(model.feature_names, model.contributions(x))}
     contributions = dict(sorted(contributions.items(), key=lambda kv: abs(kv[1]), reverse=True))
 
-    guard.record(client_ip(request), prediction, proba)
+    guard.record(client_ip(request), tier, probability)
     return {
-        "prediction": prediction,  # 1 = SÍ suscribe el depósito, 0 = NO
-        "probability": round(proba, 4),
+        "tier": tier,  # prioridad de llamada: alta | media | baja
+        "probability": round(probability, 4),  # calibrada: coincide con la tasa real observada
+        "base_rate": round(model.base_rate, 4),
+        "lift": round(probability / model.base_rate, 2),  # veces más probable que un cliente promedio
+        "score": round(score, 4),  # score crudo del modelo (no es una probabilidad real)
         "contributions": contributions,
         "base_value": round(model.base_value, 4),
     }

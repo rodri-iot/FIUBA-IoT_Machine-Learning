@@ -1,38 +1,34 @@
 import { useEffect, useState } from 'react';
+import { TIER_META, pct } from '../lib/config.js';
 
 export default function HistoryPanel({ refreshKey }) {
-  const [records, setRecords] = useState([]);
-  const [error, setError] = useState(null);
-
+  const [rows, setRows] = useState([]);
   useEffect(() => {
-    fetch('/api/history')
-      .then(res => res.json())
-      .then(data => { setRecords(Array.isArray(data) ? data : []); setError(null); })
-      .catch(() => setError('Error al cargar el historial'));
+    fetch('/api/history').then((r) => r.json()).then((d) => setRows(Array.isArray(d) ? d.slice(0, 8) : [])).catch(() => setRows([]));
   }, [refreshKey]);
-
+  if (!rows.length) return null;
   return (
-    <div style={{ background: '#fff', padding: '1rem', borderRadius: '12px', boxShadow: '0 0 6px rgba(0,0,0,0.1)' }}>
-      <h3 style={{ marginBottom: '1rem' }}>📚 Historial de Predicciones</h3>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr><th>Fecha</th><th>Resultado</th><th>Prob. de “sí”</th></tr>
-          </thead>
-          <tbody>
-            {records.map(r => (
-              <tr key={r.id}>
-                <td>{new Date(r.created_at).toLocaleString()}</td>
-                <td style={{ color: r.prediction === 1 ? 'green' : 'red' }}>
-                  {r.prediction === 1 ? 'Sí contrata' : 'No contrata'}
-                </td>
-                <td>{(r.probability * 100).toFixed(2)}%</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <section className="block" id="historial">
+      <div className="container">
+        <div className="card">
+          <h3>Últimas consultas a la demo</h3>
+          <p>Se guardan solo la prioridad, la probabilidad y la fecha. No se guardan los datos del formulario.</p>
+          <div style={{ overflowX: 'auto', marginTop: 8 }}>
+            <table className="history">
+              <thead><tr><th>Fecha</th><th>Prioridad</th><th>Probabilidad</th></tr></thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id}>
+                    <td>{new Date(r.created_at).toLocaleString('es-AR')}</td>
+                    <td><span className={`chip ${TIER_META[r.tier]?.tone ?? 'low'}`}>{TIER_META[r.tier]?.short ?? r.tier}</span></td>
+                    <td>{pct(r.probability, 1)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
